@@ -1,6 +1,4 @@
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -12,7 +10,7 @@ public class MainProgram {
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException {
         long timeStart = System.currentTimeMillis();
         Map<String, List<String>> fileDuplicate = new HashMap<>();
-        fileDuplicate = getListFiles("c:\\testdir\\фотографии\\", fileDuplicate);
+        fileDuplicate = getListFiles("c:\\testdir\\", fileDuplicate);
         final long[] sumFilesize =new long[1];
 
         fileDuplicate.forEach((a, b) -> {
@@ -54,8 +52,8 @@ public class MainProgram {
                 }).count();
         return fileDuplicate;
     }
-
-    public static String checksum(String filepath) throws IOException, NoSuchAlgorithmException {
+        //реализация через RandomAccessFile
+    public static String checksum1(String filepath) throws IOException, NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-256");//SHA, MD2, MD5, SHA-256, SHA-384
         long timeStart = System.currentTimeMillis();
         long fileSize = Files.size(Paths.get(filepath));
@@ -81,5 +79,27 @@ public class MainProgram {
         System.out.println(" . Complete in " + (timeStop - timeStart) / 1000 + " sec. With filesize is - " + (fileSize) + " bytes. Hash: " + result.toString());
         return result.toString();
 
+    }
+    //реализация через BufferedInputStream
+    public static String checksum(String filepath) throws IOException, NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("SHA-256");//SHA, MD2, MD5, SHA-256, SHA-384
+        File file = new File(filepath);
+        BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
+        long timeStart = System.currentTimeMillis();
+        long fileSize = Files.size(Paths.get(filepath));
+        System.out.print("Processing file " + filepath);
+        byte[] buffer = new byte[BUFF];
+        int sizeRead = -1;
+        while ((sizeRead = in.read(buffer)) != -1) {
+            md.update(buffer, 0, sizeRead);
+        }
+        in.close();
+        StringBuilder result = new StringBuilder();
+        for (byte b : md.digest()) {
+            result.append(String.format("%02x", b));
+        }
+        long timeStop = System.currentTimeMillis();
+        System.out.println(" . Complete in " + (timeStop - timeStart) / 1000 + " sec. With filesize is - " + (fileSize) + " bytes. Hash: " + result.toString());
+        return result.toString();
     }
 }
